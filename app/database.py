@@ -1,4 +1,5 @@
 # Database setup for Todo app
+# pyrefly: ignore[missing-import]
 from flask import current_app, g
 import MySQLdb
 from MySQLdb.cursors import DictCursor
@@ -18,10 +19,17 @@ def get_db():
                 charset='utf8mb4',
                 autocommit=True,
             )
+
         except MySQLdb.Error as e:
-            current_app.logger.error(f"Database connection failed: {e}")
-            # Re‑raise as a generic exception; route handlers can catch this.
-            raise RuntimeError('Database connection error')
+              current_app.logger.exception("Database connection failed")
+            
+              raise RuntimeError(f"Database connection error: {e}") from e
+
+
+        # except MySQLdb.Error as e:
+        #     current_app.logger.error(f"Database connection failed: {e}")
+        #     # Re‑raise as a generic exception; route handlers can catch this.
+        #     raise RuntimeError('Database connection error')
     return g.db
 
 def init_db(app):
