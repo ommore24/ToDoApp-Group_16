@@ -1,0 +1,22 @@
+/* Basic styling for Todo App */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+header {
+    background-color: #4CAF50;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+nav a {
+    margin: 0 0.5rem;
+    color: #fff;
+    text-decoration: none;
+}
+main {
+    padding: 2rem;
+}
+
