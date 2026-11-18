@@ -1,6 +1,6 @@
 import os
 # pyrefly: ignore[missing-import]
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from .config import Config
 from .database import init_db,get_db
 
@@ -25,9 +25,6 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(tasks_bp, url_prefix="/tasks")
 
-    @app.route("/")
-    def home():
-     return "Todo App"
 
     # Simple health‑check endpoint
     @app.route("/health")
@@ -60,6 +57,14 @@ def create_app():
             "database_status": "Failed",
             "error": str(e)
         }), 500
+
+
+
+
+        # Dashboard page
+    @app.route("/")
+    def dashboard():
+        return render_template("dashboard.html")
 
 
     return app
