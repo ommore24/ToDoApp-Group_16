@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Register | ToDo App</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="auth-page">
+
+    <main class="auth-card">
+
+        <a class="brand" href="/">
+            <b>✓</b> ToDo App
+        </a>
+
+        <p class="eyebrow">GET STARTED</p>
+
+        <h1>Create account</h1>
+
+        <p class="muted">
+            New registrations receive the User role.
+        </p>
+
+        <form id="registerForm" class="form">
+
+            <label>
+                Full name
+                <input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    required
+                >
+            </label>
+
+            <label>
+                Email
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    required
+                >
+            </label>
+
+            <label>
+                Password
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Create a password"
+                    minlength="8"
+                    required
+                >
+            </label>
+
+            <p id="authError" class="error hidden"></p>
+
+            <button type="submit" class="primary">
+                Create account
+            </button>
+
+        </form>
+
+        <p class="auth-foot">
+            Already registered?
+            <a href="/login">Sign in</a>
+        </p>
+
+    </main>
+
+    <!-- Load common.js BEFORE auth.js -->
+    <script src="{{ url_for('static', filename='js/common.js') }}" defer></script>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+
+</body>
+</html>

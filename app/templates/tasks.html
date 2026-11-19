@@ -1,0 +1,153 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Tasks | ToDo App{% endblock %}
+
+{% block content %}
+
+<section class="tasks-page">
+
+    <section class="heading tasks-heading">
+        <div>
+            <p class="eyebrow">TASK MANAGEMENT</p>
+            <h1>My Tasks</h1>
+            <p class="muted">Organize your work and stay on top of your goals.</p>
+        </div>
+
+        <button id="addTask" class="primary button">
+            + Add New Task
+        </button>
+    </section>
+
+    <section class="panel tasks-panel">
+
+        <div class="tasks-panel-heading">
+            <div>
+                <h2>All Tasks</h2>
+                <p class="muted">Manage and track your daily activities.</p>
+            </div>
+        </div>
+
+        <div class="toolbar tasks-toolbar">
+
+            <input
+                id="search"
+                placeholder="Search your tasks..."
+                type="search"
+            >
+
+            <select id="statusFilter">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In progress</option>
+                <option value="completed">Completed</option>
+            </select>
+
+            <select id="priorityFilter">
+                <option value="">All priorities</option>
+                <option value="high">High priority</option>
+                <option value="medium">Medium priority</option>
+                <option value="low">Low priority</option>
+            </select>
+
+        </div>
+
+        <p id="taskMessage" class="muted">Loading tasks...</p>
+
+        <div id="taskList" class="task-list"></div>
+
+    </section>
+
+</section>
+
+
+<!-- ADD / EDIT TASK MODAL -->
+
+<div id="taskModal" class="backdrop hidden">
+
+    <section class="modal">
+
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow">TASK DETAILS</p>
+                <h2 id="modalTitle">Add New Task</h2>
+            </div>
+
+            <button id="closeTask" class="close" type="button">×</button>
+        </div>
+
+        <form id="taskForm" class="form">
+
+            <input id="taskId" type="hidden">
+
+            <label>
+                Task Title
+                <input
+                    id="taskTitle"
+                    type="text"
+                    placeholder="Enter task title"
+                    required
+                    maxlength="120"
+                >
+            </label>
+
+            <label>
+                Description
+                <textarea
+                    id="taskDescription"
+                    rows="3"
+                    placeholder="Describe your task..."
+                ></textarea>
+            </label>
+
+            <div class="two">
+
+                <label>
+                    Priority
+                    <select id="taskPriority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </label>
+
+                <label>
+                    Due Date
+                    <input id="taskDue" type="date">
+                </label>
+
+            </div>
+
+            <label id="statusWrap" class="hidden">
+                Task Status
+                <select id="taskStatus">
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </label>
+
+            <p id="taskError" class="error hidden"></p>
+
+            <div class="actions">
+                <button type="button" id="cancelTask" class="secondary">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary">
+                    Save Task
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static',filename='js/tasks.js') }}" defer></script>
+{% endblock %}

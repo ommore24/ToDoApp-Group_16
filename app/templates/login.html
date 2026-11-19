@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | ToDo App</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="auth-page">
+
+    <main class="auth-card">
+
+        <a class="brand" href="/">
+            <b>✓</b> ToDo App
+        </a>
+
+        <p class="eyebrow">WELCOME BACK</p>
+
+        <h1>Sign in</h1>
+
+        <p class="muted">
+            Sign in to continue to your workspace.
+        </p>
+
+        <form id="loginForm" class="form">
+
+            <label>
+                Email
+                <input id="email" type="email" placeholder="Enter your email" required>
+            </label>
+
+            <label>
+                Password
+                <input id="password" type="password" placeholder="Enter your password" required>
+            </label>
+
+            <p id="authError" class="error hidden"></p>
+
+            <button type="submit" class="primary">
+                Sign in
+            </button>
+
+        </form>
+
+        <p class="auth-foot">
+            Don't have an account?
+            <a href="/register">Create account</a>
+        </p>
+
+    </main>
+
+    <!-- Load common.js BEFORE auth.js -->
+    <script src="{{ url_for('static', filename='js/common.js') }}" defer></script>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+
+</body>
+
+</html>
