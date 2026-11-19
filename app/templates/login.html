@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,22 +32,12 @@
 
             <label>
                 Email
-                <input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
-                >
+                <input id="email" type="email" placeholder="Enter your email" required>
             </label>
 
             <label>
                 Password
-                <input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    required
-                >
+                <input id="password" type="password" placeholder="Enter your password" required>
             </label>
 
             <p id="authError" class="error hidden"></p>
@@ -71,4 +61,5 @@
     <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
 
 </body>
+
 </html>
