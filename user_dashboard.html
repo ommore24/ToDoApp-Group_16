@@ -1,0 +1,90 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | ToDo App{% endblock %}
+
+{% block content %}
+
+<section class="dashboard-page">
+
+    <section class="heading dashboard-heading">
+        <div>
+            <p class="eyebrow">YOUR PERSONAL WORKSPACE</p>
+            <h1 id="welcome">Your Dashboard</h1>
+            <p class="muted">Stay organized and make every day productive.</p>
+        </div>
+
+        <a class="primary button" href="/tasks">
+            + Add New Task
+        </a>
+    </section>
+
+    <section class="stats dashboard-stats">
+
+        <article class="dashboard-stat">
+            <div class="stat-icon purple-icon">☷</div>
+            <span>Total Tasks</span>
+            <strong id="total">—</strong>
+            <small>All your tasks</small>
+        </article>
+
+        <article class="dashboard-stat">
+            <div class="stat-icon orange-icon">◷</div>
+            <span>Pending Tasks</span>
+            <strong id="pending">—</strong>
+            <small>Waiting to be done</small>
+        </article>
+
+        <article class="dashboard-stat">
+            <div class="stat-icon blue-icon">↻</div>
+            <span>In Progress</span>
+            <strong id="progress">—</strong>
+            <small>Currently working on</small>
+        </article>
+
+        <article class="dashboard-stat">
+            <div class="stat-icon green-icon">✓</div>
+            <span>Completed</span>
+            <strong id="completed">—</strong>
+            <small>Successfully finished</small>
+        </article>
+
+    </section>
+
+    <section class="dashboard-content">
+
+        <div class="panel recent-panel">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR WORK</p>
+                    <h2>Recent Tasks</h2>
+                </div>
+
+                <a href="/tasks" class="view-all">View all →</a>
+            </div>
+
+            <div id="recent" class="rows"></div>
+        </div>
+
+        <div class="panel productivity-panel">
+            <p class="eyebrow">STAY FOCUSED</p>
+            <h2>Keep going!</h2>
+            <p class="muted">
+                Every completed task brings you one step closer
+                to your goals.
+            </p>
+
+            <a href="/tasks" class="primary button">
+                Manage My Tasks →
+            </a>
+        </div>
+
+    </section>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static',filename='js/user_dashboard.js') }}" defer></script>
+{% endblock %}
