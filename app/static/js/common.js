@@ -41,6 +41,7 @@ function routeRole(u) {
 
 
 document.addEventListener("DOMContentLoaded", async () => {
+
     const nav = document.getElementById("sideNav");
 
     if (!nav) {
@@ -48,12 +49,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-        const u = (await api("/api/auth/me")).user;
+        const response = await api("/api/auth/me");
+        const u = response.user;
 
-        document.getElementById("sideName").textContent = u.name;
-        document.getElementById("sideRole").textContent = u.role;
-        document.getElementById("avatar").textContent =
-            u.name[0].toUpperCase();
+        const sideName = document.getElementById("sideName");
+        const sideRole = document.getElementById("sideRole");
+        const avatar = document.getElementById("avatar");
+
+        if (sideName) sideName.textContent = u.name;
+        if (sideRole) sideRole.textContent = u.role;
+
+        if (avatar) {
+            avatar.textContent = u.name
+                ? u.name[0].toUpperCase()
+                : "?";
+        }
 
         const links = u.role === "admin"
             ? [
@@ -81,6 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     } catch (e) {
         location.href = "/login";
+        return;
     }
 
     document.getElementById("logoutButton")?.addEventListener(

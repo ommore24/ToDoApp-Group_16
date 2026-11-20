@@ -1,10 +1,6 @@
 .env
 venv/
-<<<<<<< HEAD
-.env
-=======
 __pycache__/
 *.pyc
 .idea/
 .vscode/
->>>>>>> 7159c6856efefa8918d81641868b2ffae8e83e7f

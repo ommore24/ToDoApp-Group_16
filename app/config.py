@@ -25,3 +25,7 @@ class Config:
     # Session security settings
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    ADMIN_NAME = os.getenv('ADMIN_NAME')
+    ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')

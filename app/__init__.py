@@ -1,5 +1,4 @@
-
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, session, redirect, url_for
 
 from .config import Config
 from .database import init_db, get_db
@@ -16,12 +15,19 @@ def create_app():
     # Initialize database
     init_db(app)
 
+    from .admin.setup import create_default_admin
+
+    with app.app_context():
+     create_default_admin()
+
     # Register blueprints
     from .auth import auth_bp
     from .tasks import tasks_bp
+    from .admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(tasks_bp, url_prefix="/api/tasks")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
     # -------------------------
     # HEALTH CHECK
@@ -89,10 +95,63 @@ def create_app():
 
     @app.route("/admin")
     def admin_dashboard():
+     user_id = session.get("user_id")
+
+     if not user_id:
+        return redirect(url_for("login_page"))
+
+     db = get_db()
+     cursor = db.cursor()
+
+     try:
+        cursor.execute(
+            "SELECT role, active FROM users WHERE id = %s",
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+        if not user or not user["active"]:
+            session.clear()
+            return redirect(url_for("login_page"))
+
+        if user["role"] != "admin":
+            return redirect(url_for("dashboard"))
+
         return render_template("admin_dashboard.html")
 
+     finally:
+        cursor.close()
+
+   
     @app.route("/admin/users")
     def admin_users():
+     user_id = session.get("user_id")
+
+     if not user_id:
+        return redirect(url_for("login_page"))
+
+     db = get_db()
+     cursor = db.cursor()
+
+     try:
+        cursor.execute(
+            "SELECT role, active FROM users WHERE id = %s",
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+        if not user or not user["active"]:
+            session.clear()
+            return redirect(url_for("login_page"))
+
+        if user["role"] != "admin":
+            return redirect(url_for("dashboard"))
+
         return render_template("admin_users.html")
+
+     finally:
+        cursor.close()
 
     return app
