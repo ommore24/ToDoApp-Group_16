@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}TaskFlow{% endblock %}</title>
+
+    <script>
+        try {
+            if (localStorage.getItem("taskflow-theme") === "dark") {
+                document.documentElement.dataset.theme = "dark";
+            }
+        } catch(e) {}
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body data-overdue-count="{{ overdue_count|default(0) }}">
+
+{% if session.get('role') in ['admin', 'user'] %}
+
+<div class="app-shell">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <a class="brand"
+           href="{{ url_for('admin_dashboard') if session.get('role') == 'admin' else url_for('dashboard') }}">
+
+            <span class="brand-mark">✓</span>
+            <span>TaskFlow</span>
+
+        </a>
+
+        <div class="nav-label">WORKSPACE</div>
+
+        <nav>
+
+            {% if session.get('role') == 'admin' %}
+
+                <!-- ADMIN NAVIGATION -->
+
+                <a class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+                   href="{{ url_for('admin_dashboard') }}">
+                    ▦ <span>Dashboard</span>
+                </a>
+
+                <div class="nav-label">MANAGEMENT</div>
+
+                <a class="{% if request.endpoint == 'admin_users' %}active{% endif %}"
+                   href="{{ url_for('admin_users') }}">
+                    ♙ <span>User Management</span>
+                </a>
+
+                <a class="{% if request.endpoint in ['admin_tasks', 'admin_update_task'] %}active{% endif %}"
+                   href="{{ url_for('admin_tasks') }}">
+                    ☷ <span>Task Management</span>
+                </a>
+
+            {% else %}
+
+                <!-- USER NAVIGATION -->
+
+                <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}"
+                   href="{{ url_for('dashboard') }}">
+                    ▦ <span>Dashboard</span>
+                </a>
+
+                <a class="{% if request.endpoint == 'task_list' %}active{% endif %}"
+                   href="{{ url_for('task_list') }}">
+                    ☷ <span>My Tasks</span>
+                </a>
+
+            {% endif %}
+
+        </nav>
+
+        <!-- PROFILE -->
+
+        <div class="sidebar-bottom">
+
+            <div class="profile-avatar">
+                {{ session.get('name', 'U')[:1]|upper }}
+            </div>
+
+            <div>
+                <strong>{{ session.get('name', 'User') }}</strong>
+
+                <small>
+                    {% if session.get('role') == 'admin' %}
+                        Administrator
+                    {% else %}
+                        User account
+                    {% endif %}
+                </small>
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN AREA -->
+
+    <main class="main-area">
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <span>
+                Workspace / {% block breadcrumb %}Overview{% endblock %}
+            </span>
+
+            <div class="topbar-actions">
+
+                <button class="theme-toggle"
+                        id="notificationToggle"
+                        type="button"
+                        aria-label="Enable task notifications">
+
+                    ♧ <span class="toggle-label">Enable alerts</span>
+
+                </button>
+
+                <button class="theme-toggle"
+                        id="themeToggle"
+                        type="button"
+                        aria-label="Toggle dark mode">
+
+                    <span id="themeIcon">☾</span>
+                    <span class="toggle-label">Dark mode</span>
+
+                </button>
+
+                <a class="logout-link"
+                   href="{{ url_for('logout') }}"
+                   title="Log out">
+
+                    <span>↪</span>
+                    <span>Log out</span>
+
+                </a>
+
+            </div>
+
+        </header>
+
+        <!-- FLASH MESSAGES -->
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+
+                <div class="flash" role="status" data-toast>
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+
+            {% endif %}
+        {% endwith %}
+
+        <!-- PAGE CONTENT -->
+
+        {% block content %}{% endblock %}
+
+    </main>
+
+</div>
+
+{% else %}
+
+    <!-- AUTHENTICATION PAGES ONLY -->
+
+    <main class="auth-layout">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+
+                <div class="flash" role="status" data-toast>
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+
+            {% endif %}
+        {% endwith %}
+
+        {% block auth_content %}{% endblock %}
+
+    </main>
+
+{% endif %}
+
+<!-- TOAST REGION -->
+
+<div class="toast-region"
+     id="toastRegion"
+     aria-live="polite">
+</div>
+
+<!-- JAVASCRIPT -->
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

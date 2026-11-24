@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Overview | TaskFlow{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><p class="eyebrow">OVERVIEW</p><h1>Good to see you.</h1><p class="muted">Here's what's happening with your tasks today.</p></div>
+  <a class="button primary" href="{{ url_for('task_list') }}">＋ View tasks</a>
+</section>
+<section class="stats-grid">
+  <article class="stat-card"><div class="stat-icon purple">☷</div><p>Total tasks</p><strong>{{ stats.total }}</strong><small>Across your workspace</small></article>
+  <article class="stat-card"><div class="stat-icon green">✓</div><p>Completed</p><strong>{{ stats.completed }}</strong><small>Tasks finished</small></article>
+  <article class="stat-card"><div class="stat-icon orange">◷</div><p>Pending</p><strong>{{ stats.pending }}</strong><small>Waiting to be started</small></article>
+  <article class="stat-card"><div class="stat-icon blue">↗</div><p>In progress</p><strong>{{ stats.in_progress }}</strong><small>Currently underway</small></article>
+</section>
+{% if stats.overdue %}
+<div class="overdue-banner"><span class="overdue-symbol">!</span><div><strong>{{ stats.overdue }} overdue task{% if stats.overdue != 1 %}s{% endif %}</strong><p>Review tasks whose due dates have passed.</p></div><a href="{{ url_for('task_list') }}">View tasks →</a></div>
+{% endif %}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Recent tasks</h2><p class="muted">A quick look at your latest work.</p></div><a class="text-link" href="{{ url_for('task_list') }}">See all tasks →</a></div>
+  {% for task in tasks[:5] %}
+  <div class="task-row">
+    <form action="{{ url_for('complete_task', task_id=task.id) }}" method="post"><button class="task-check {% if task.status == 'Completed' %}checked{% endif %}" title="Toggle completion">{% if task.status == 'Completed' %}✓{% endif %}</button></form>
+    <div class="task-info"><strong>{{ task.title }}</strong><small>{{ task.description or 'No description' }}</small></div>
+    {% if is_overdue(task) %}<span class="status overdue">Overdue</span>{% endif %}
+    <span class="priority {{ task.priority|lower }}">{{ task.priority }}</span>
+    <span class="status {{ task.status|lower|replace(' ', '-') }}">{{ task.status }}</span>
+  </div>
+  {% else %}<p class="empty-state">No tasks yet. Add your first task from My Tasks.</p>{% endfor %}
+</section>
+{% endblock %}
