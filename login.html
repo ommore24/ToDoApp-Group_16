@@ -1,0 +1,51 @@
+
+{% extends "base.html" %}
+{% block title %}Login | TaskFlow{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrap">
+    <section class="auth-card">
+
+        <a class="brand centered" href="{{ url_for('login') }}">
+            <span class="brand-mark">✓</span>
+            <span>TaskFlow</span>
+        </a>
+
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1>Sign in</h1>
+        <p class="muted">Continue to your productivity workspace.</p>
+
+        <form class="task-form" method="POST" action="{{ url_for('login') }}">
+
+            <label>Email address
+                <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="you@example.com"
+                    autocomplete="email">
+            </label>
+
+            <label>Password
+                <input
+                    type="password"
+                    name="password"
+                    required
+                    placeholder="Enter your password"
+                    autocomplete="current-password">
+            </label>
+
+            <button type="submit" class="button primary full-width">
+                Sign in
+            </button>
+
+        </form>
+
+        <p class="auth-foot">
+            New here?
+            <a href="{{ url_for('register') }}">Create an account</a>
+        </p>
+
+    </section>
+</div>
+{% endblock %}
