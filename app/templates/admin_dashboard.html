@@ -2,6 +2,26 @@
 {% block title %}Admin Dashboard | TaskFlow{% endblock %}
 {% block breadcrumb %}Admin Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .productivity-panel {
+        margin-bottom: 24px;
+    }
+
+    .chart-canvas-wrap {
+        position: relative;
+        width: 100%;
+        height: 340px;
+    }
+
+    .user-progress-meter {
+        min-width: 120px;
+        flex: 1;
+        max-width: 200px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <section class="page-heading">
@@ -17,7 +37,6 @@
 </section>
 
 <!-- STATISTICS -->
-
 <section class="stats-grid">
 
     <article class="stat-card">
@@ -64,9 +83,7 @@
 
 </section>
 
-
 <!-- QUICK MANAGEMENT -->
-
 <section class="analytics-grid">
 
     <div class="panel">
@@ -101,13 +118,10 @@
 
 </section>
 
-
 <!-- ANALYTICS -->
-
 <section class="analytics-grid">
 
     <div class="panel">
-
         <div class="panel-heading">
             <div>
                 <h2>Task Status Overview</h2>
@@ -116,32 +130,22 @@
         </div>
 
         <div class="bar-chart">
-
             {% for item in chart %}
-
             <div class="bar-row">
-
                 <div class="bar-label">
                     <span>{{ item.label }}</span>
                     <strong>{{ item.value }}</strong>
                 </div>
 
                 <div class="bar-track">
-                    <div class="bar-fill {{ item.class_name }}" style="width: {{ item.percent }}%">
-                    </div>
+                    <div class="bar-fill {{ item.class_name }}" data-width="{{ item.percent }}"></div>
                 </div>
-
             </div>
-
             {% endfor %}
-
         </div>
-
     </div>
 
-
     <div class="panel insight-panel">
-
         <div class="panel-heading">
             <div>
                 <h2>Productivity Insights</h2>
@@ -158,22 +162,18 @@
         <p class="muted">Task completion rate</p>
 
         <div class="progress-track">
-            <div class="progress-fill" style="width: {{ completion }}%">
-            </div>
+            <div class="progress-fill" data-width="{{ completion }}"></div>
         </div>
 
         <p class="insight-copy">
             {{ stats.completed }} of {{ stats.total }} tasks are completed.
         </p>
-
     </div>
 
 </section>
 
-
 <!-- USER PRODUCTIVITY LINE GRAPH -->
-
-<section class="panel" style="margin-bottom: 24px;">
+<section class="panel productivity-panel">
 
     <div class="panel-heading">
         <div>
@@ -185,24 +185,19 @@
     </div>
 
     {% if users %}
-
-    <div style="position: relative; width: 100%; height: 340px;">
-        <canvas id="userProductivityChart"></canvas>
+    <div class="chart-canvas-wrap">
+        <canvas id="userProductivityChart" data-labels='{{ productivity_labels | tojson }}'
+            data-datasets='{{ productivity_datasets | tojson }}'></canvas>
     </div>
-
     {% else %}
-
     <p class="empty-state">
         No registered users available to display.
     </p>
-
     {% endif %}
 
 </section>
 
-
 <!-- USER-WISE PROGRESS -->
-
 <section class="panel admin-table">
 
     <div class="panel-heading">
@@ -217,9 +212,7 @@
     </div>
 
     {% for user in user_progress %}
-
     <div class="task-row">
-
         <div class="task-info">
             <strong>{{ user.name }}</strong>
             <small>
@@ -231,29 +224,22 @@
 
         {% set progress = (user.completed / user.total * 100)|round|int if user.total else 0 %}
 
-        <div style="min-width:120px; flex:1; max-width:200px;">
+        <div class="user-progress-meter">
             <div class="progress-track">
-                <div class="progress-fill" style="width: {{ progress }}%">
-                </div>
+                <div class="progress-fill" data-width="{{ progress }}"></div>
             </div>
             <small>{{ progress }}% completed</small>
         </div>
-
     </div>
-
     {% else %}
-
     <p class="empty-state">
         No registered users yet.
     </p>
-
     {% endfor %}
 
 </section>
 
-
 <!-- RECENT TASK MONITORING -->
-
 <section class="panel admin-table">
 
     <div class="panel-heading">
@@ -268,9 +254,7 @@
     </div>
 
     {% for task in tasks[:5] %}
-
     <div class="task-row">
-
         <div class="task-info">
             <strong>{{ task.title }}</strong>
 
@@ -289,93 +273,101 @@
         <span class="status {{ task.status|lower|replace(' ', '-') }}">
             {{ task.status }}
         </span>
-
     </div>
-
     {% else %}
-
     <p class="empty-state">
         No tasks have been created yet.
     </p>
-
     {% endfor %}
 
 </section>
 
+{% endblock %}
 
-<!-- LINE GRAPH SCRIPT -->
-
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Apply bar & progress widths cleanly without inline Jinja CSS
+        document.querySelectorAll("[data-width]").forEach(function (el) {
+            const pct = Number(el.dataset.width) || 0;
+            el.style.width = `${pct}%`;
+        });
 
         const canvas = document.getElementById("userProductivityChart");
-
         if (!canvas) return;
 
-        const labels = {{ productivity_labels| tojson
-    }};
-    const datasets = {{ productivity_datasets| tojson }};
+        const labels = JSON.parse(canvas.dataset.labels || "[]");
+        const datasets = JSON.parse(canvas.dataset.datasets || "[]");
 
-    if (typeof Chart === "undefined") {
-        canvas.parentElement.innerHTML =
-            '<p class="muted">The graph library could not be loaded. Check your internet connection.</p>';
-        return;
-    }
+        if (typeof Chart === "undefined") {
+            canvas.parentElement.innerHTML =
+                '<p class="muted">The graph library could not be loaded. Check your internet connection.</p>';
+            return;
+        }
 
-    new Chart(canvas, {
-        type: "line",
+        const styles = getComputedStyle(document.documentElement);
+        const textColor = styles.getPropertyValue("--muted").trim() || "#64748b";
+        const gridColor = styles.getPropertyValue("--border").trim() || "rgba(148, 163, 184, 0.2)";
 
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-
-            interaction: {
-                mode: "index",
-                intersect: false
+        new Chart(canvas, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: datasets
             },
-
-            plugins: {
-                legend: {
-                    display: true,
-                    position: "bottom"
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
                 },
-
-                tooltip: {
-                    enabled: true
-                }
-            },
-
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0,
-                        stepSize: 1
-                    },
-                    title: {
+                plugins: {
+                    legend: {
                         display: true,
-                        text: "Completed Tasks"
+                        position: "bottom",
+                        labels: {
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        enabled: true
                     }
                 },
-
-                x: {
-                    title: {
-                        display: true,
-                        text: "Date"
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            precision: 0,
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        title: {
+                            display: true,
+                            text: "Completed Tasks",
+                            color: textColor
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        title: {
+                            display: true,
+                            text: "Date",
+                            color: textColor
+                        }
                     }
                 }
             }
-        }
+        });
     });
-
-});
 </script>
-
 {% endblock %}
