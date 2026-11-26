@@ -68,8 +68,53 @@
     <p class="empty-state">No tasks yet. Add your first task from My Tasks.</p>
     {% endfor %}
 </section>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+    function showPopupToast(message) {
+        const region = document.getElementById("toastRegion");
+        if (!region || !message) return;
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        region.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    function queueToast(message) {
+        try {
+            sessionStorage.setItem("taskflow-toast", message);
+        } catch (e) { }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Show pending toast after reload
+        try {
+            const msg = sessionStorage.getItem("taskflow-toast");
+            if (msg) {
+                sessionStorage.removeItem("taskflow-toast");
+                showPopupToast(msg);
+            }
+        } catch (e) { }
+
+        // Ensure dark mode toggle works reliably
+        const themeToggle = document.getElementById("themeToggle");
+        if (themeToggle && !themeToggle.dataset.bound) {
+            themeToggle.dataset.bound = "true";
+            themeToggle.addEventListener("click", function () {
+                const root = document.documentElement;
+                const next = root.dataset.theme === "dark" ? "light" : "dark";
+                root.dataset.theme = next;
+                const icon = document.getElementById("themeIcon");
+                if (icon) icon.textContent = next === "dark" ? "☀" : "☾";
+                const label = themeToggle.querySelector(".toggle-label");
+                if (label) label.textContent = next === "dark" ? "Light mode" : "Dark mode";
+                try { localStorage.setItem("taskflow-theme", next); } catch (e) { }
+            });
+        }
+    });
+
     async function toggleDashboardTask(btn) {
         const taskId = btn.dataset.taskId;
         const nextStatus = btn.dataset.status === "completed" ? "pending" : "completed";
@@ -83,9 +128,10 @@
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error || "Could not update task");
             }
+            queueToast(nextStatus === "completed" ? "Task marked as completed." : "Task marked as pending.");
             location.reload();
         } catch (e) {
-            alert(e.message || "Could not update task");
+            showPopupToast(e.message || "Could not update task");
         }
     }
 </script>

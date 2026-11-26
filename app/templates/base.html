@@ -30,25 +30,20 @@
     <div class="app-shell">
 
         <!-- SIDEBAR -->
-
         <aside class="sidebar">
 
             <a class="brand"
                 href="{{ url_for('admin_dashboard') if session.get('role') == 'admin' else url_for('dashboard') }}">
-
                 <span class="brand-mark">✓</span>
                 <span>TaskFlow</span>
-
             </a>
 
             <div class="nav-label">WORKSPACE</div>
 
             <nav>
-
                 {% if session.get('role') == 'admin' %}
 
                 <!-- ADMIN NAVIGATION -->
-
                 <a class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
                     href="{{ url_for('admin_dashboard') }}">
                     ▦ <span>Dashboard</span>
@@ -69,30 +64,26 @@
                 {% else %}
 
                 <!-- USER NAVIGATION -->
-
                 <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
                     ▦ <span>Dashboard</span>
                 </a>
 
-                <a class="{% if request.endpoint == 'task_list' %}active{% endif %}" href="{{ url_for('tasks_page') }}">
+                <a class="{% if request.endpoint in ['tasks_page', 'task_list'] %}active{% endif %}"
+                    href="{{ url_for('tasks_page') }}">
                     ☷ <span>My Tasks</span>
                 </a>
 
                 {% endif %}
-
             </nav>
 
             <!-- PROFILE -->
-
             <div class="sidebar-bottom">
-
                 <div class="profile-avatar">
                     {{ session.get('name', 'U')[:1]|upper }}
                 </div>
 
                 <div>
                     <strong>{{ session.get('name', 'User') }}</strong>
-
                     <small>
                         {% if session.get('role') == 'admin' %}
                         Administrator
@@ -101,66 +92,49 @@
                         {% endif %}
                     </small>
                 </div>
-
             </div>
 
         </aside>
 
         <!-- MAIN AREA -->
-
         <main class="main-area">
 
             <!-- TOPBAR -->
-
             <header class="topbar">
-
                 <span>
                     Workspace / {% block breadcrumb %}Overview{% endblock %}
                 </span>
 
                 <div class="topbar-actions">
-
                     <button class="theme-toggle" id="notificationToggle" type="button"
                         aria-label="Enable task notifications">
-
                         ♧ <span class="toggle-label">Enable alerts</span>
-
                     </button>
 
                     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">
-
                         <span id="themeIcon">☾</span>
                         <span class="toggle-label">Dark mode</span>
-
                     </button>
 
-                    <a class="logout-link" href="{{ url_for('auth.logout') }}" title="Log out">
-
+                    <a class="logout-link" href="{{ url_for('logout') }}" title="Log out">
                         <span>↪</span>
                         <span>Log out</span>
-
                     </a>
-
                 </div>
-
             </header>
 
             <!-- FLASH MESSAGES -->
-
             {% with messages = get_flashed_messages() %}
             {% if messages %}
-
             <div class="flash" role="status" data-toast>
                 {% for message in messages %}
                 {{ message }}
                 {% endfor %}
             </div>
-
             {% endif %}
             {% endwith %}
 
             <!-- PAGE CONTENT -->
-
             {% block content %}{% endblock %}
 
         </main>
@@ -170,40 +144,142 @@
     {% else %}
 
     <!-- AUTHENTICATION PAGES ONLY -->
-
     <main class="auth-layout">
-
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-
         <div class="flash" role="status" data-toast>
             {% for message in messages %}
             {{ message }}
             {% endfor %}
         </div>
-
         {% endif %}
         {% endwith %}
 
         {% block auth_content %}{% endblock %}
-
     </main>
 
     {% endif %}
 
     <!-- TOAST REGION -->
-
-    <div class="toast-region" id="toastRegion" aria-live="polite">
-    </div>
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
 
     <!-- JAVASCRIPT -->
-
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 
-    {% block extra_js %}{% endblock %}
+    <script>
+        function showPopupToast(message) {
+            const region = document.getElementById("toastRegion");
+            if (!region || !message) return;
+            const toast = document.createElement("div");
+            toast.className = "toast";
+            toast.textContent = message;
+            region.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
 
+        function queueToast(message) {
+            try {
+                sessionStorage.setItem("taskflow-toast", message);
+            } catch (e) { }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. SHOW PENDING TOAST AFTER RELOAD
+            try {
+                const pendingToast = sessionStorage.getItem("taskflow-toast");
+                if (pendingToast) {
+                    sessionStorage.removeItem("taskflow-toast");
+                    showPopupToast(pendingToast);
+                }
+            } catch (e) { }
+
+            // 2. DARK MODE TOGGLE
+            const root = document.documentElement;
+            const themeToggle = document.getElementById("themeToggle");
+            const themeIcon = document.getElementById("themeIcon");
+
+            function syncTheme(theme) {
+                root.dataset.theme = theme;
+                if (themeIcon) themeIcon.textContent = theme === "dark" ? "☀" : "☾";
+                const label = themeToggle?.querySelector(".toggle-label");
+                if (label) label.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+            }
+
+            syncTheme(root.dataset.theme || "light");
+
+            themeToggle?.addEventListener("click", function (e) {
+                e.stopImmediatePropagation();
+                const next = root.dataset.theme === "dark" ? "light" : "dark";
+                syncTheme(next);
+                try {
+                    localStorage.setItem("taskflow-theme", next);
+                } catch (err) { }
+            });
+
+            // 3. ENABLE ALERTS (BROWSER NOTIFICATIONS + OVERDUE REMINDER)
+            const notificationToggle = document.getElementById("notificationToggle");
+            const overdueCount = Number(document.body.dataset.overdueCount || 0);
+
+            function syncAlertButton() {
+                if (!notificationToggle || !("Notification" in window)) return;
+                const label = notificationToggle.querySelector(".toggle-label");
+                if (Notification.permission === "granted") {
+                    if (label) label.textContent = "Alerts on";
+                } else if (Notification.permission === "denied") {
+                    if (label) label.textContent = "Alerts blocked";
+                }
+            }
+
+            syncAlertButton();
+
+            notificationToggle?.addEventListener("click", async function (e) {
+                e.stopImmediatePropagation();
+                if (!("Notification" in window)) {
+                    showPopupToast("Browser notifications are not supported in this browser.");
+                    return;
+                }
+
+                if (Notification.permission === "denied") {
+                    showPopupToast("Notifications are blocked in your browser site settings.");
+                    return;
+                }
+
+                if (Notification.permission === "granted") {
+                    showPopupToast(
+                        overdueCount > 0
+                            ? `Alerts enabled — you have ${overdueCount} overdue task(s).`
+                            : "Task alerts are already enabled!"
+                    );
+                    if (overdueCount > 0) {
+                        new Notification("TaskFlow Reminder", {
+                            body: `You have ${overdueCount} overdue task(s) needing attention.`
+                        });
+                    }
+                    return;
+                }
+
+                try {
+                    const permission = await Notification.requestPermission();
+                    syncAlertButton();
+                    if (permission === "granted") {
+                        showPopupToast("Task alerts enabled!");
+                        new Notification("TaskFlow Alerts Enabled", {
+                            body: overdueCount > 0
+                                ? `You currently have ${overdueCount} overdue task(s).`
+                                : "You'll be notified about overdue tasks."
+                        });
+                    } else {
+                        showPopupToast("Notification permission was not granted.");
+                    }
+                } catch (err) {
+                    showPopupToast("Could not request notification permission.");
+                }
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>
