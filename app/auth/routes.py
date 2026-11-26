@@ -1,5 +1,4 @@
-
-from flask import request, jsonify, session
+from flask import request, jsonify, session, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 import MySQLdb
 
@@ -16,6 +15,13 @@ def format_user(user):
     }
 
 
+def set_user_session(user):
+    session.clear()
+    session["user_id"] = user["id"]
+    session["role"] = user["role"]
+    session["name"] = user["username"]
+
+
 # -------------------------
 # REGISTER
 # -------------------------
@@ -24,7 +30,6 @@ def format_user(user):
 def register():
 
     if request.method == "GET":
-        from flask import render_template
         return render_template("register.html")
 
     data = request.get_json(silent=True) or {}
@@ -60,6 +65,7 @@ def register():
             """,
             (name, email, password_hash)
         )
+        db.commit()
 
         user_id = cursor.lastrowid
 
@@ -73,9 +79,7 @@ def register():
         )
 
         user = cursor.fetchone()
-
-        session.clear()
-        session["user_id"] = user_id
+        set_user_session(user)
 
         return jsonify({
             "message": "Registration successful",
@@ -83,6 +87,7 @@ def register():
         }), 201
 
     except MySQLdb.IntegrityError:
+        db.rollback()
         return jsonify({
             "error": "This email is already registered"
         }), 409
@@ -99,7 +104,6 @@ def register():
 def login():
 
     if request.method == "GET":
-        from flask import render_template
         return render_template("login.html")
 
     data = request.get_json(silent=True) or {}
@@ -139,8 +143,7 @@ def login():
                 "error": "Your account has been disabled"
             }), 403
 
-        session.clear()
-        session["user_id"] = user["id"]
+        set_user_session(user)
 
         return jsonify({
             "message": "Login successful",

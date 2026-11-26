@@ -1,7 +1,17 @@
+from datetime import date
 from flask import Flask, jsonify, render_template, session, redirect, url_for
 
 from .config import Config
 from .database import init_db, get_db
+
+
+def is_overdue(task):
+    due = task.get("due_date")
+    if not due or task.get("status") == "completed":
+        return False
+    if isinstance(due, str):
+        due = date.fromisoformat(due[:10])
+    return due < date.today()
 
 
 def create_app():
@@ -18,7 +28,7 @@ def create_app():
     from .admin.setup import create_default_admin
 
     with app.app_context():
-     create_default_admin()
+        create_default_admin()
 
     # Register blueprints
     from .auth import auth_bp
@@ -85,73 +95,128 @@ def create_app():
     def register_page():
         return render_template("register.html")
 
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(url_for("login_page"))
+
     @app.route("/dashboard")
     def dashboard():
-        return render_template("user_dashboard.html")
+        user_id = session.get("user_id")
+        if not user_id:
+            return redirect(url_for("login_page"))
+
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT * FROM tasks WHERE user_id = %s ORDER BY created_at DESC",
+                (user_id,)
+            )
+            tasks = cursor.fetchall()
+        finally:
+            cursor.close()
+
+        stats = {
+            "total": len(tasks),
+            "completed": sum(1 for t in tasks if t["status"] == "completed"),
+            "pending": sum(1 for t in tasks if t["status"] == "pending"),
+            "in_progress": sum(1 for t in tasks if t["status"] == "in_progress"),
+            "overdue": sum(1 for t in tasks if is_overdue(t)),
+        }
+
+        return render_template(
+            "dashboard.html",
+            tasks=tasks,
+            stats=stats,
+            is_overdue=is_overdue,
+            overdue_count=stats["overdue"]
+        )
 
     @app.route("/tasks")
+    @app.route("/tasks", endpoint="task_list")
     def tasks_page():
-        return render_template("tasks.html")
+        user_id = session.get("user_id")
+        if not user_id:
+            return redirect(url_for("login_page"))
+
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT * FROM tasks WHERE user_id = %s ORDER BY created_at DESC",
+                (user_id,)
+            )
+            tasks = cursor.fetchall()
+        finally:
+            cursor.close()
+
+        overdue_count = sum(1 for t in tasks if is_overdue(t))
+        return render_template(
+            "tasks.html",
+            tasks=tasks,
+            is_overdue=is_overdue,
+            overdue_count=overdue_count
+        )
 
     @app.route("/admin")
     def admin_dashboard():
-     user_id = session.get("user_id")
+        user_id = session.get("user_id")
 
-     if not user_id:
-        return redirect(url_for("login_page"))
-
-     db = get_db()
-     cursor = db.cursor()
-
-     try:
-        cursor.execute(
-            "SELECT role, active FROM users WHERE id = %s",
-            (user_id,)
-        )
-
-        user = cursor.fetchone()
-
-        if not user or not user["active"]:
-            session.clear()
+        if not user_id:
             return redirect(url_for("login_page"))
 
-        if user["role"] != "admin":
-            return redirect(url_for("dashboard"))
+        db = get_db()
+        cursor = db.cursor()
 
-        return render_template("admin_dashboard.html")
+        try:
+            cursor.execute(
+                "SELECT role, active FROM users WHERE id = %s",
+                (user_id,)
+            )
 
-     finally:
-        cursor.close()
+            user = cursor.fetchone()
 
-   
+            if not user or not user["active"]:
+                session.clear()
+                return redirect(url_for("login_page"))
+
+            if user["role"] != "admin":
+                return redirect(url_for("dashboard"))
+
+            return render_template("admin_dashboard.html")
+
+        finally:
+            cursor.close()
+
     @app.route("/admin/users")
     def admin_users():
-     user_id = session.get("user_id")
+        user_id = session.get("user_id")
 
-     if not user_id:
-        return redirect(url_for("login_page"))
-
-     db = get_db()
-     cursor = db.cursor()
-
-     try:
-        cursor.execute(
-            "SELECT role, active FROM users WHERE id = %s",
-            (user_id,)
-        )
-
-        user = cursor.fetchone()
-
-        if not user or not user["active"]:
-            session.clear()
+        if not user_id:
             return redirect(url_for("login_page"))
 
-        if user["role"] != "admin":
-            return redirect(url_for("dashboard"))
+        db = get_db()
+        cursor = db.cursor()
 
-        return render_template("admin_users.html")
+        try:
+            cursor.execute(
+                "SELECT role, active FROM users WHERE id = %s",
+                (user_id,)
+            )
 
-     finally:
-        cursor.close()
+            user = cursor.fetchone()
+
+            if not user or not user["active"]:
+                session.clear()
+                return redirect(url_for("login_page"))
+
+            if user["role"] != "admin":
+                return redirect(url_for("dashboard"))
+
+            return render_template("admin_users.html")
+
+        finally:
+            cursor.close()
 
     return app

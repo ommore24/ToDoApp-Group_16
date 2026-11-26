@@ -1,269 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Overview | TaskFlow{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">OVERVIEW</p>
+        <h1>Good to see you.</h1>
+        <p class="muted">Here's what's happening with your tasks today.</p>
+    </div>
+    <a class="button primary" href="{{ url_for('tasks_page') }}">＋ View tasks</a>
+</section>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskFlow | Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
+<section class="stats-grid">
+    <article class="stat-card">
+        <div class="stat-icon purple">☷</div>
+        <p>Total tasks</p><strong>{{ stats.total }}</strong><small>Across your workspace</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-icon green">✓</div>
+        <p>Completed</p><strong>{{ stats.completed }}</strong><small>Tasks finished</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-icon orange">◷</div>
+        <p>Pending</p><strong>{{ stats.pending }}</strong><small>Waiting to be started</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-icon blue">↗</div>
+        <p>In progress</p><strong>{{ stats.in_progress }}</strong><small>Currently underway</small>
+    </article>
+</section>
 
-<body>
+{% if stats.overdue %}
+<div class="overdue-banner">
+    <span class="overdue-symbol">!</span>
+    <div>
+        <strong>{{ stats.overdue }} overdue task{% if stats.overdue != 1 %}s{% endif %}</strong>
+        <p>Review tasks whose due dates have passed.</p>
+    </div>
+    <a href="{{ url_for('tasks_page') }}">View tasks →</a>
+</div>
+{% endif %}
 
-    <div class="app-layout">
-
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-icon">✓</div>
-                <span>TaskFlow</span>
-            </div>
-
-            <p class="nav-heading">MENU</p>
-
-            <nav class="nav-menu">
-                <a href="/" class="nav-link active">
-                    <span class="nav-icon">▦</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">☷</span>
-                    <span>All Tasks</span>
-                    <span class="nav-count">12</span>
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">◷</span>
-                    <span>Upcoming</span>
-                </a>
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">✓</span>
-                    <span>Completed</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-bottom">
-                <div class="sidebar-help">
-                    <div class="help-icon">?</div>
-                    <div>
-                        <strong>Need help?</strong>
-                        <small>Check our user guide</small>
-                    </div>
-                </div>
-
-                <button class="profile-button" type="button">
-                    <div class="avatar">DU</div>
-                    <div class="profile-info">
-                        <strong>Demo User</strong>
-                        <small>demo@example.com</small>
-                    </div>
-                    <span class="profile-menu">•••</span>
-                </button>
-            </div>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-
-            <header class="topbar">
-                <div>
-                    <p class="breadcrumb">Workspace / Dashboard</p>
-                    <h1>My Dashboard</h1>
-                    <p class="subtitle">Manage your tasks and stay productive.</p>
-                </div>
-
-                <div class="top-actions">
-                    <button class="icon-button search-button" type="button" aria-label="Search">⌕</button>
-                    <button class="icon-button notification-button" type="button" aria-label="Notifications">
-                        ♧<span class="notification-dot"></span>
-                    </button>
-                    <div class="top-avatar">DU</div>
-                </div>
-            </header>
-
-            <!-- WELCOME BANNER -->
-            <section class="welcome-banner">
-                <div>
-                    <p class="welcome-label">YOUR WORKSPACE</p>
-                    <h2>Welcome back, Demo User! 👋</h2>
-                    <p>Every small step brings you closer to your goals. Let's get things done.</p>
-                </div>
-                <div class="banner-decoration">✦</div>
-            </section>
-
-            <!-- STATISTICS -->
-            <section class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">Total Tasks</span>
-                        <span class="stat-icon purple">☷</span>
-                    </div>
-                    <h2>12</h2>
-                    <p class="stat-note">Tasks in your workspace</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">Pending Tasks</span>
-                        <span class="stat-icon orange">◷</span>
-                    </div>
-                    <h2>07</h2>
-                    <p class="stat-note">Waiting to be completed</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">Completed</span>
-                        <span class="stat-icon green">✓</span>
-                    </div>
-                    <h2>05</h2>
-                    <p class="stat-note">Great work so far!</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">High Priority</span>
-                        <span class="stat-icon red">⚑</span>
-                    </div>
-                    <h2>03</h2>
-                    <p class="stat-note">Tasks that need attention</p>
-                </div>
-            </section>
-
-            <!-- TASK SECTION -->
-            <section class="task-section">
-
-                <div class="section-heading">
-                    <div>
-                        <h2>Your Tasks</h2>
-                        <p>Keep track of everything you need to do.</p>
-                    </div>
-                    <button class="primary-button" type="button">
-                        <span>＋</span> Add New Task
-                    </button>
-                </div>
-
-                <!-- ADD TASK FORM - VISUAL ONLY -->
-                <div class="add-task-panel">
-                    <h3>Create a new task</h3>
-
-                    <div class="task-form">
-                        <input type="text" placeholder="What needs to be done?">
-
-                        <select>
-                            <option value="">Priority</option>
-                            <option>Low</option>
-                            <option>Medium</option>
-                            <option>High</option>
-                        </select>
-
-                        <input type="date" aria-label="Due date">
-
-                        <button class="primary-button" type="button">Add Task</button>
-                    </div>
-
-                    <textarea placeholder="Add a short description (optional)"></textarea>
-                </div>
-
-                <!-- FILTERS -->
-                <div class="task-toolbar">
-                    <div class="filter-buttons">
-                        <button class="filter-button selected" type="button">All Tasks</button>
-                        <button class="filter-button" type="button">Pending</button>
-                        <button class="filter-button" type="button">Completed</button>
-                    </div>
-
-                    <select class="sort-select" aria-label="Sort tasks">
-                        <option>Sort: Recent</option>
-                        <option>Due Date</option>
-                        <option>Priority</option>
-                    </select>
-                </div>
-
-                <!-- TASK LIST -->
-                <div class="task-list">
-
-                    <article class="task-card">
-                        <div class="task-check">✓</div>
-                        <div class="task-details">
-                            <h3>Complete Flask setup</h3>
-                            <p>Finish the initial application configuration and test the server.</p>
-                            <div class="task-meta">
-                                <span class="priority medium">● Medium</span>
-                                <span>◷ Due Nov 20, 2026</span>
-                            </div>
-                        </div>
-                        <span class="status pending">Pending</span>
-                        <div class="task-actions">
-                            <button class="icon-button small" type="button" aria-label="Edit task">✎</button>
-                            <button class="icon-button small delete-button" type="button"
-                                aria-label="Delete task">⌫</button>
-                        </div>
-                    </article>
-
-                    <article class="task-card">
-                        <div class="task-check">✓</div>
-                        <div class="task-details">
-                            <h3>Design database schema</h3>
-                            <p>Review the users and tasks tables and their relationships.</p>
-                            <div class="task-meta">
-                                <span class="priority high">● High</span>
-                                <span>◷ Due Nov 21, 2026</span>
-                            </div>
-                        </div>
-                        <span class="status pending">Pending</span>
-                        <div class="task-actions">
-                            <button class="icon-button small" type="button" aria-label="Edit task">✎</button>
-                            <button class="icon-button small delete-button" type="button"
-                                aria-label="Delete task">⌫</button>
-                        </div>
-                    </article>
-
-                    <article class="task-card completed-task">
-                        <div class="task-check checked">✓</div>
-                        <div class="task-details">
-                            <h3>Install project dependencies</h3>
-                            <p>Install Flask, MySQL connector and the required packages.</p>
-                            <div class="task-meta">
-                                <span class="priority low">● Low</span>
-                                <span>◷ Due Nov 17, 2026</span>
-                            </div>
-                        </div>
-                        <span class="status completed">Completed</span>
-                        <div class="task-actions">
-                            <button class="icon-button small" type="button" aria-label="Edit task">✎</button>
-                            <button class="icon-button small delete-button" type="button"
-                                aria-label="Delete task">⌫</button>
-                        </div>
-                    </article>
-
-                    <article class="task-card">
-                        <div class="task-check">✓</div>
-                        <div class="task-details">
-                            <h3>Build dashboard interface</h3>
-                            <p>Create the main dashboard layout and task management interface.</p>
-                            <div class="task-meta">
-                                <span class="priority high">● High</span>
-                                <span>◷ Due Nov 22, 2026</span>
-                            </div>
-                        </div>
-                        <span class="status pending">Pending</span>
-                        <div class="task-actions">
-                            <button class="icon-button small" type="button" aria-label="Edit task">✎</button>
-                            <button class="icon-button small delete-button" type="button"
-                                aria-label="Delete task">⌫</button>
-                        </div>
-                    </article>
-
-                </div>
-            </section>
-
-            <footer class="footer">
-                TaskFlow © 2026 · Stay organized, stay productive.
-            </footer>
-
-        </main>
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Recent tasks</h2>
+            <p class="muted">A quick look at your latest work.</p>
+        </div>
+        <a class="text-link" href="{{ url_for('tasks_page') }}">See all tasks →</a>
     </div>
 
-</body>
+    {% for task in tasks[:5] %}
+    <div class="task-row">
+        <button type="button" class="task-check {% if task.status == 'completed' %}checked{% endif %}"
+            data-task-id="{{ task.id }}" data-status="{{ task.status }}" onclick="toggleDashboardTask(this)"
+            title="Toggle completion">
+            {% if task.status == 'completed' %}✓{% endif %}
+        </button>
+        <div class="task-info">
+            <strong>{{ task.title }}</strong>
+            <small>{{ task.description or 'No description' }}</small>
+        </div>
+        {% if is_overdue(task) %}<span class="status overdue">Overdue</span>{% endif %}
+        <span class="priority {{ task.priority|lower }}">{{ task.priority|title }}</span>
+        <span class="status {{ task.status|lower|replace('_', '-') }}">{{ task.status|replace('_', ' ')|title }}</span>
+    </div>
+    {% else %}
+    <p class="empty-state">No tasks yet. Add your first task from My Tasks.</p>
+    {% endfor %}
+</section>
 
-</html>
+<script>
+    async function toggleDashboardTask(btn) {
+        const taskId = btn.dataset.taskId;
+        const nextStatus = btn.dataset.status === "completed" ? "pending" : "completed";
+        try {
+            const res = await fetch(`/api/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: nextStatus })
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Could not update task");
+            }
+            location.reload();
+        } catch (e) {
+            alert(e.message || "Could not update task");
+        }
+    }
+</script>
+{% endblock %}

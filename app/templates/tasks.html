@@ -1,110 +1,165 @@
-
 {% extends "base.html" %}
 
-{% block title %}My Tasks | ToDo App{% endblock %}
+{% block title %}My Tasks | TaskFlow{% endblock %}
+{% block breadcrumb %}My Tasks{% endblock %}
 
 {% block content %}
 
-<section class="tasks-page">
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">YOUR WORKSPACE</p>
+        <h1>My Tasks</h1>
+        <p class="muted">Organize your work and keep moving forward.</p>
+    </div>
 
-    <section class="heading tasks-heading">
-        <div>
-            <p class="eyebrow">TASK MANAGEMENT</p>
-            <h1>My Tasks</h1>
-            <p class="muted">Organize your work and stay on top of your goals.</p>
-        </div>
+    <button class="button primary" id="openTaskModal" type="button">
+        ＋ Add new task
+    </button>
+</section>
 
-        <button id="addTask" class="primary button">
-            + Add New Task
-        </button>
-    </section>
+<!-- TASK LIST -->
+<section class="panel">
 
-    <section class="panel tasks-panel">
+    <div class="toolbar">
+        <input id="taskSearch" class="search-input" type="search" placeholder="Search tasks...">
 
-        <div class="tasks-panel-heading">
-            <div>
-                <h2>All Tasks</h2>
-                <p class="muted">Manage and track your daily activities.</p>
+        <select id="statusFilter" class="filter-select">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+        </select>
+
+        <select id="priorityFilter" class="filter-select">
+            <option value="">All priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+        </select>
+
+        <select id="dueFilter" class="filter-select">
+            <option value="">All due dates</option>
+            <option value="overdue">Overdue</option>
+            <option value="upcoming">Upcoming</option>
+        </select>
+    </div>
+
+    <div id="taskList">
+
+        {% for task in tasks %}
+
+        <article class="task-row task-item" data-status="{{ task.status|lower }}"
+            data-priority="{{ task.priority|lower }}" data-overdue="{{ 'yes' if is_overdue(task) else 'no' }}"
+            data-search="{{ (task.title ~ ' ' ~ (task.description or ''))|lower|e }}">
+
+            <!-- COMPLETE TASK -->
+            <button type="button" class="task-check {% if task.status == 'completed' %}checked{% endif %}"
+                data-id="{{ task.id }}" data-status="{{ task.status }}" onclick="toggleTaskStatus(this)"
+                title="Toggle completion">
+                {% if task.status == 'completed' %}✓{% endif %}
+            </button>
+
+            <!-- TASK INFORMATION -->
+            <div class="task-info">
+                <strong>{{ task.title }}</strong>
+
+                <small>
+                    {{ task.description or 'No description' }}
+                    {% if task.due_date %}
+                    · Due {{ task.due_date }}
+                    {% endif %}
+                </small>
             </div>
-        </div>
 
-        <div class="toolbar tasks-toolbar">
+            <!-- OVERDUE STATUS -->
+            {% if is_overdue(task) %}
+            <span class="status overdue">Overdue</span>
+            {% endif %}
 
-            <input
-                id="search"
-                placeholder="Search your tasks..."
-                type="search"
-            >
+            <!-- PRIORITY -->
+            <span class="priority {{ task.priority|lower }}">
+                {{ task.priority|title }}
+            </span>
 
-            <select id="statusFilter">
-                <option value="">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">In progress</option>
-                <option value="completed">Completed</option>
-            </select>
+            <!-- TASK STATUS -->
+            <span class="status {{ task.status|lower|replace('_', '-') }}">
+                {{ task.status|replace('_', ' ')|title }}
+            </span>
 
-            <select id="priorityFilter">
-                <option value="">All priorities</option>
-                <option value="high">High priority</option>
-                <option value="medium">Medium priority</option>
-                <option value="low">Low priority</option>
-            </select>
+            <!-- EDIT TASK -->
+            <button type="button" class="icon-button edit-task-button" title="Edit task" aria-label="Edit task"
+                data-id="{{ task.id }}" data-title="{{ task.title|e }}"
+                data-description="{{ task.description|default('', true)|e }}" data-status="{{ task.status|lower }}"
+                data-priority="{{ task.priority|lower }}" data-due-date="{{ task.due_date|default('', true)|e }}">
+                ✎
+            </button>
 
-        </div>
+            <!-- DELETE TASK -->
+            <button type="button" class="delete-button" title="Delete task" aria-label="Delete task"
+                data-id="{{ task.id }}" onclick="deleteTaskItem(this)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="M19 6l-1 14H6L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                </svg>
+            </button>
 
-        <p id="taskMessage" class="muted">Loading tasks...</p>
+        </article>
 
-        <div id="taskList" class="task-list"></div>
+        {% else %}
 
-    </section>
+        <p class="empty-state">
+            No tasks yet. Add your first task.
+        </p>
+
+        {% endfor %}
+
+    </div>
+
+    <p id="noResults" class="empty-state hidden">
+        No tasks match your filters.
+    </p>
 
 </section>
 
+<!-- ADD TASK MODAL -->
+<div class="modal-backdrop" id="taskModal">
 
-<!-- ADD / EDIT TASK MODAL -->
+    <div class="modal">
 
-<div id="taskModal" class="backdrop hidden">
-
-    <section class="modal">
-
-        <div class="modal-head">
+        <div class="modal-heading">
             <div>
-                <p class="eyebrow">TASK DETAILS</p>
-                <h2 id="modalTitle">Add New Task</h2>
+                <p class="eyebrow">NEW ITEM</p>
+                <h2>Create a task</h2>
             </div>
 
-            <button id="closeTask" class="close" type="button">×</button>
+            <button class="icon-button" id="closeTaskModal" type="button">
+                ×
+            </button>
         </div>
 
-        <form id="taskForm" class="form">
-
-            <input id="taskId" type="hidden">
+        <form id="addTaskForm" class="task-form">
 
             <label>
-                Task Title
-                <input
-                    id="taskTitle"
-                    type="text"
-                    placeholder="Enter task title"
-                    required
-                    maxlength="120"
-                >
+                Task title
+                <input id="addTaskTitle" name="title" required maxlength="200"
+                    placeholder="e.g. Finish project documentation">
             </label>
 
             <label>
                 Description
-                <textarea
-                    id="taskDescription"
-                    rows="3"
-                    placeholder="Describe your task..."
-                ></textarea>
+                <textarea id="addTaskDescription" name="description" rows="3"
+                    placeholder="Add a few details..."></textarea>
             </label>
 
-            <div class="two">
+            <div class="form-grid">
 
                 <label>
                     Priority
-                    <select id="taskPriority">
+                    <select id="addTaskPriority" name="priority">
                         <option value="low">Low</option>
                         <option value="medium" selected>Medium</option>
                         <option value="high">High</option>
@@ -112,42 +167,252 @@
                 </label>
 
                 <label>
-                    Due Date
-                    <input id="taskDue" type="date">
+                    Due date
+                    <input id="addTaskDueDate" type="date" name="due_date">
                 </label>
 
             </div>
 
-            <label id="statusWrap" class="hidden">
-                Task Status
-                <select id="taskStatus">
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="completed">Completed</option>
-                </select>
-            </label>
-
-            <p id="taskError" class="error hidden"></p>
-
-            <div class="actions">
-                <button type="button" id="cancelTask" class="secondary">
-                    Cancel
-                </button>
-
-                <button type="submit" class="primary">
-                    Save Task
-                </button>
-            </div>
+            <button class="button primary full-width" type="submit">
+                Create task
+            </button>
 
         </form>
 
-    </section>
-
+    </div>
 </div>
 
-{% endblock %}
+<!-- EDIT TASK MODAL -->
+<div class="modal-backdrop" id="editTaskModal">
 
+    <div class="modal">
 
-{% block scripts %}
-<script src="{{ url_for('static',filename='js/tasks.js') }}" defer></script>
+        <div class="modal-heading">
+            <div>
+                <p class="eyebrow">UPDATE ITEM</p>
+                <h2>Edit task</h2>
+            </div>
+
+            <button class="icon-button" id="closeEditTaskModal" type="button">
+                ×
+            </button>
+        </div>
+
+        <form id="editTaskForm" class="task-form">
+            <input type="hidden" id="editTaskId">
+
+            <label>
+                Task title
+                <input type="text" name="title" id="editTaskTitle" required maxlength="200"
+                    placeholder="Enter task title">
+            </label>
+
+            <label>
+                Description
+                <textarea name="description" id="editTaskDescription" rows="3"
+                    placeholder="Add task details..."></textarea>
+            </label>
+
+            <div class="form-grid">
+
+                <label>
+                    Status
+                    <select name="status" id="editTaskStatus">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </label>
+
+                <label>
+                    Priority
+                    <select name="priority" id="editTaskPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </label>
+
+            </div>
+
+            <label>
+                Due date
+                <input type="date" name="due_date" id="editTaskDueDate">
+            </label>
+
+            <button class="button primary full-width" type="submit">
+                Save changes
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    async function requestJson(url, options = {}) {
+        const res = await fetch(url, {
+            headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+            ...options
+        });
+        if (res.status === 204) return null;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || `Request failed (${res.status})`);
+        }
+        return data;
+    }
+
+    async function toggleTaskStatus(btn) {
+        const taskId = btn.dataset.id;
+        const nextStatus = btn.dataset.status === "completed" ? "pending" : "completed";
+        try {
+            await requestJson(`/api/tasks/${taskId}`, {
+                method: "PATCH",
+                body: JSON.stringify({ status: nextStatus })
+            });
+            location.reload();
+        } catch (e) {
+            alert(e.message || "Could not update task");
+        }
+    }
+
+    async function deleteTaskItem(btn) {
+        if (!confirm("Delete this task?")) return;
+        const taskId = btn.dataset.id;
+        try {
+            await requestJson(`/api/tasks/${taskId}`, { method: "DELETE" });
+            location.reload();
+        } catch (e) {
+            alert(e.message || "Could not delete task");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. ADD TASK MODAL & FORM
+        const taskModal = document.getElementById("taskModal");
+        const openTaskModal = document.getElementById("openTaskModal");
+        const closeTaskModal = document.getElementById("closeTaskModal");
+        const addTaskForm = document.getElementById("addTaskForm");
+
+        openTaskModal?.addEventListener("click", () => taskModal?.classList.add("open"));
+        closeTaskModal?.addEventListener("click", () => taskModal?.classList.remove("open"));
+        taskModal?.addEventListener("click", (e) => {
+            if (e.target === taskModal) taskModal.classList.remove("open");
+        });
+
+        addTaskForm?.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            try {
+                await requestJson("/api/tasks", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        title: document.getElementById("addTaskTitle").value.trim(),
+                        description: document.getElementById("addTaskDescription").value.trim() || null,
+                        priority: document.getElementById("addTaskPriority").value,
+                        due_date: document.getElementById("addTaskDueDate").value || null
+                    })
+                });
+                location.reload();
+            } catch (err) {
+                alert(err.message || "Could not create task");
+            }
+        });
+
+        // 2. EDIT TASK MODAL & FORM
+        const editTaskModal = document.getElementById("editTaskModal");
+        const closeEditTaskModal = document.getElementById("closeEditTaskModal");
+        const editTaskForm = document.getElementById("editTaskForm");
+
+        document.querySelectorAll(".edit-task-button").forEach(function (button) {
+            button.addEventListener("click", function () {
+                document.getElementById("editTaskId").value = this.dataset.id;
+                document.getElementById("editTaskTitle").value = this.dataset.title || "";
+                document.getElementById("editTaskDescription").value = this.dataset.description || "";
+                document.getElementById("editTaskStatus").value = this.dataset.status || "pending";
+                document.getElementById("editTaskPriority").value = this.dataset.priority || "medium";
+                document.getElementById("editTaskDueDate").value = this.dataset.dueDate || "";
+                editTaskModal?.classList.add("open");
+            });
+        });
+
+        closeEditTaskModal?.addEventListener("click", () => editTaskModal?.classList.remove("open"));
+        editTaskModal?.addEventListener("click", (e) => {
+            if (e.target === editTaskModal) editTaskModal.classList.remove("open");
+        });
+
+        editTaskForm?.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const taskId = document.getElementById("editTaskId").value;
+            try {
+                await requestJson(`/api/tasks/${taskId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                        title: document.getElementById("editTaskTitle").value.trim(),
+                        description: document.getElementById("editTaskDescription").value.trim() || null,
+                        status: document.getElementById("editTaskStatus").value,
+                        priority: document.getElementById("editTaskPriority").value,
+                        due_date: document.getElementById("editTaskDueDate").value || null
+                    })
+                });
+                location.reload();
+            } catch (err) {
+                alert(err.message || "Could not update task");
+            }
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                taskModal?.classList.remove("open");
+                editTaskModal?.classList.remove("open");
+            }
+        });
+
+        // 3. SEARCH AND FILTERS
+        const searchInput = document.getElementById("taskSearch");
+        const statusFilter = document.getElementById("statusFilter");
+        const priorityFilter = document.getElementById("priorityFilter");
+        const dueFilter = document.getElementById("dueFilter");
+        const taskItems = document.querySelectorAll(".task-item");
+        const noResults = document.getElementById("noResults");
+
+        function applyTaskFilters() {
+            const query = (searchInput?.value || "").toLowerCase().trim();
+            const status = (statusFilter?.value || "").toLowerCase();
+            const priority = (priorityFilter?.value || "").toLowerCase();
+            const due = (dueFilter?.value || "").toLowerCase();
+
+            let visibleCount = 0;
+
+            taskItems.forEach(function (item) {
+                const itemSearch = item.dataset.search || "";
+                const itemStatus = (item.dataset.status || "").toLowerCase();
+                const itemPriority = (item.dataset.priority || "").toLowerCase();
+                const itemOverdue = (item.dataset.overdue || "no").toLowerCase();
+
+                const matchesSearch = !query || itemSearch.includes(query);
+                const matchesStatus = !status || itemStatus === status;
+                const matchesPriority = !priority || itemPriority === priority;
+                const matchesDue =
+                    !due ||
+                    (due === "overdue" && itemOverdue === "yes") ||
+                    (due === "upcoming" && itemOverdue === "no");
+
+                const isVisible = matchesSearch && matchesStatus && matchesPriority && matchesDue;
+                item.classList.toggle("hidden", !isVisible);
+                if (isVisible) visibleCount++;
+            });
+
+            if (noResults) {
+                noResults.classList.toggle("hidden", visibleCount !== 0 || taskItems.length === 0);
+            }
+        }
+
+        searchInput?.addEventListener("input", applyTaskFilters);
+        statusFilter?.addEventListener("change", applyTaskFilters);
+        priorityFilter?.addEventListener("change", applyTaskFilters);
+        dueFilter?.addEventListener("change", applyTaskFilters);
+    });
+</script>
+
 {% endblock %}

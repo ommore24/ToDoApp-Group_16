@@ -1,69 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Register | TaskFlow{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block auth_content %}
+<div class="auth-wrap">
+    <section class="auth-card">
 
-    <title>Register | ToDo App</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-
-<body class="auth-page">
-
-    <main class="auth-card">
-
-        <a class="brand" href="/">
-            <b>✓</b> ToDo App
+        <a class="brand centered" href="{{ url_for('auth.login') }}">
+            <span class="brand-mark">✓</span>
+            <span>TaskFlow</span>
         </a>
 
         <p class="eyebrow">GET STARTED</p>
-
         <h1>Create account</h1>
+        <p class="muted">Set up your personal productivity workspace.</p>
 
-        <p class="muted">
-            New registrations receive the User role.
-        </p>
+        <div id="authError" class="alert error hidden"></div>
 
-        <form id="registerForm" class="form">
+        <form id="registerForm" class="task-form" method="POST" action="{{ url_for('auth.register') }}">
 
-            <label>
-                Full name
-                <input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    required
-                >
+            <label>Full name
+                <input id="name" type="text" name="name" required placeholder="Your name" autocomplete="name">
             </label>
 
-            <label>
-                Email
-                <input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
-                >
+            <label>Email address
+                <input id="email" type="email" name="email" required placeholder="you@example.com" autocomplete="email">
             </label>
 
-            <label>
-                Password
-                <input
-                    id="password"
-                    type="password"
-                    placeholder="Create a password"
-                    minlength="8"
-                    required
-                >
+            <label>Password
+                <input id="password" type="password" name="password" required minlength="8"
+                    placeholder="Create a password" autocomplete="new-password">
             </label>
 
-            <p id="authError" class="error hidden"></p>
+            <label>Confirm password
+                <input id="confirmPassword" type="password" name="confirmPassword" required minlength="8"
+                    placeholder="Confirm your password" autocomplete="new-password">
+            </label>
 
-            <button type="submit" class="primary">
+            <button type="submit" class="button primary full-width">
                 Create account
             </button>
 
@@ -71,15 +44,9 @@
 
         <p class="auth-foot">
             Already registered?
-            <a href="/login">Sign in</a>
+            <a href="{{ url_for('auth.login') }}">Sign in</a>
         </p>
 
-    </main>
-
-    <!-- Load common.js BEFORE auth.js -->
-    <script src="{{ url_for('static', filename='js/common.js') }}" defer></script>
-
-    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
-
-</body>
-</html>
+    </section>
+</div>
+{% endblock %}

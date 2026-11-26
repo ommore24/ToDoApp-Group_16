@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% block title %}Task Management | TaskFlow{% endblock %}
+{% block breadcrumb %}Task Management{% endblock %}
+
+{% block content %}
+
+{% set completed_count = tasks|selectattr('status', 'equalto', 'Completed')|list|length %}
+{% set pending_count = tasks|selectattr('status', 'equalto', 'Pending')|list|length %}
+{% set progress_count = tasks|selectattr('status', 'equalto', 'In Progress')|list|length %}
+{% set overdue_count = namespace(value=0) %}
+
+{% for task in tasks %}
+{% if is_overdue(task) %}
+{% set overdue_count.value = overdue_count.value + 1 %}
+{% endif %}
+{% endfor %}
+
+<!-- PAGE HEADING -->
+<section class="page-heading task-management-heading">
+    <div>
+        <p class="eyebrow">ADMINISTRATION / TASKS</p>
+        <h1>Task Management</h1>
+        <p class="muted">Monitor, review and manage tasks across all user accounts.</p>
+    </div>
+
+    <div class="task-heading-actions">
+        <div class="task-total-card">
+            <span class="task-total-icon">▦</span>
+            <div>
+                <strong>{{ tasks|length }}</strong>
+                <small>Total tasks</small>
+            </div>
+        </div>
+
+        <button type="button" class="button primary" id="openAddTaskModal">
+            + Add New Task
+        </button>
+    </div>
+</section>
+
+<!-- TASK STATISTICS -->
+<section class="stats-grid task-stats-grid">
+
+    <article class="stat-card">
+        <div class="task-stat-top">
+            <span class="stat-icon purple">▦</span>
+            <span class="task-stat-label">ALL TASKS</span>
+        </div>
+        <strong>{{ tasks|length }}</strong>
+        <small>Tasks across all accounts</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="task-stat-top">
+            <span class="stat-icon green">✓</span>
+            <span class="task-stat-label">COMPLETED</span>
+        </div>
+        <strong>{{ completed_count }}</strong>
+        <small>Successfully finished</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="task-stat-top">
+            <span class="stat-icon orange">◷</span>
+            <span class="task-stat-label">PENDING</span>
+        </div>
+        <strong>{{ pending_count }}</strong>
+        <small>Waiting to be completed</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="task-stat-top">
+            <span class="stat-icon blue">↻</span>
+            <span class="task-stat-label">IN PROGRESS</span>
+        </div>
+        <strong>{{ progress_count }}</strong>
+        <small>Currently being worked on</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="task-stat-top">
+            <span class="stat-icon red">!</span>
+            <span class="task-stat-label">OVERDUE</span>
+        </div>
+        <strong>{{ overdue_count.value }}</strong>
+        <small>Past their due date</small>
+    </article>
+
+</section>
+
+<!-- TASK DIRECTORY -->
+<section class="panel task-directory">
+
+    <div class="task-directory-header">
+        <div>
+            <h2>All Tasks</h2>
+            <p class="muted">Review task details, ownership, priority and progress.</p>
+        </div>
+
+        <span class="directory-count">{{ tasks|length }} tasks</span>
+    </div>
+
+    <!-- SEARCH AND FILTERS -->
+    <div class="task-management-toolbar">
+
+        <div class="task-management-search">
+            <span>⌕</span>
+            <input type="search" id="taskSearch" placeholder="Search tasks or users..." aria-label="Search tasks">
+        </div>
+
+        <select id="taskStatusFilter" class="filter-select">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in progress">In Progress</option>
+            <option value="completed">Completed</option>
+        </select>
+
+        <select id="taskPriorityFilter" class="filter-select">
+            <option value="all">All priorities</option>
+            <option value="high">High priority</option>
+            <option value="medium">Medium priority</option>
+            <option value="low">Low priority</option>
+        </select>
+
+    </div>
+
+    <!-- TASK TABLE -->
+    <div class="task-management-table-wrap">
+
+        <table class="data-table task-management-table" id="tasksTable">
+
+            <thead>
+                <tr>
+                    <th>TASK DETAILS</th>
+                    <th>ASSIGNED USER</th>
+                    <th>PRIORITY</th>
+                    <th>DUE DATE</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for task in tasks %}
+
+                <tr class="task-management-row" data-status="{{ task.status|lower }}"
+                    data-priority="{{ task.priority|default('medium')|lower }}">
+
+                    <td>
+                        <div class="managed-task-identity">
+                            <div class="managed-task-icon">✓</div>
+                            <div>
+                                <strong>{{ task.title }}</strong>
+                                <small>{{ task.description|default('No description provided') }}</small>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="assigned-user">
+                            <span class="assigned-user-avatar">
+                                {{ task.user[:1]|upper if task.user else '?' }}
+                            </span>
+                            <span>{{ task.user|default('Unassigned') }}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        {% set priority = task.priority|default('medium')|lower %}
+                        <span class="managed-priority {{ priority }}-priority">
+                            <span></span>
+                            {{ priority|capitalize }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="managed-due-date">
+                            {{ task.due_date if task.due_date else 'No deadline' }}
+                        </span>
+
+                        {% if is_overdue(task) %}
+                        <small class="overdue-caption">Overdue</small>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if is_overdue(task) %}
+                        <span class="managed-status overdue-task-status">
+                            <span></span> Overdue
+                        </span>
+                        {% else %}
+                        <span class="managed-status {{ task.status|lower|replace(' ', '-') }}-task-status">
+                            <span></span>
+                            {{ task.status }}
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="task-action-menu">
+
+                            <button type="button" class="task-action-trigger" aria-label="Manage task {{ task.title }}">
+                                Manage <span>⌄</span>
+                            </button>
+
+                            <div class="task-action-dropdown">
+
+                                <button type="button" class="edit-task-trigger" data-id="{{ task.id }}"
+                                    data-title="{{ task.title|e }}"
+                                    data-description="{{ task.description|default('', true)|e }}"
+                                    data-status="{{ task.status|e }}"
+                                    data-update-url="{{ url_for('admin_update_task', task_id=task.id) }}">
+                                    ✎ Edit Task
+                                </button>
+
+                                <div class="task-dropdown-divider"></div>
+
+                                <form method="POST" action="{{ url_for('admin_delete_task', task_id=task.id) }}"
+                                    onsubmit="return confirm('Delete this task permanently?');">
+
+                                    <button type="submit" class="task-delete-action">
+                                        🗑 Delete Task
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        </div>
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6" class="task-empty-state">
+                        <div class="empty-task-icon">▦</div>
+                        <strong>No tasks available</strong>
+                        <p>Create your first task using the Add New Task button.</p>
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+        <div id="noTasksFound" class="task-empty-state" hidden>
+            <div class="empty-task-icon">⌕</div>
+            <strong>No matching tasks found</strong>
+            <p>Try changing your search or filters.</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- ADD TASK MODAL -->
+<div class="modal-backdrop" id="addTaskModal">
+
+    <div class="modal task-edit-modal">
+
+        <div class="modal-heading">
+            <div>
+                <p class="eyebrow">NEW ASSIGNMENT</p>
+                <h2>Create New Task</h2>
+                <p class="muted">Create a task and assign it to a registered user.</p>
+            </div>
+
+            <button type="button" class="icon-button" id="closeAddTaskModal">
+                ×
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin_add_task') }}" class="task-form">
+
+            <label>
+                Task title
+                <input type="text" name="title" placeholder="Enter task title" maxlength="100" required>
+            </label>
+
+            <label>
+                Description
+                <textarea name="description" rows="4" placeholder="Describe the task..."></textarea>
+            </label>
+
+            <label>
+                Assign to user
+                <select name="user_id" required>
+                    <option value="">Select a registered user</option>
+
+                    {% for user in users %}
+                    {% if user.status == 'Active' %}
+                    <option value="{{ user.id }}">
+                        {{ user.name }} — {{ user.email }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </label>
+
+            <div class="form-grid">
+                <label>
+                    Priority
+                    <select name="priority">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </label>
+
+                <label>
+                    Status
+                    <select name="status">
+                        <option value="Pending" selected>Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>
+                Due date
+                <input type="date" name="due_date">
+            </label>
+
+            {% if users|selectattr('status', 'equalto', 'Active')|list|length > 0 %}
+
+            <div class="task-modal-actions">
+                <button type="button" class="button secondary" id="cancelAddTask">
+                    Cancel
+                </button>
+
+                <button type="submit" class="button primary">
+                    Assign Task
+                </button>
+            </div>
+
+            {% else %}
+
+            <p class="muted">
+                No active registered users available. Register or activate a user before assigning a task.
+            </p>
+
+            <button type="button" class="button secondary" id="cancelAddTaskEmpty">
+                Close
+            </button>
+
+            {% endif %}
+
+        </form>
+    </div>
+</div>
+
+<!-- EDIT TASK MODAL -->
+<div class="modal-backdrop" id="editTaskModal">
+
+    <div class="modal task-edit-modal">
+
+        <div class="modal-heading">
+            <div>
+                <p class="eyebrow">TASK MANAGEMENT</p>
+                <h2>Edit Task</h2>
+                <p class="muted">Update task details and status.</p>
+            </div>
+
+            <button type="button" class="icon-button" id="closeTaskModal">
+                ×
+            </button>
+        </div>
+
+        <form method="POST" id="editTaskForm" class="task-form">
+
+            <label>
+                Task title
+                <input type="text" name="title" id="editTaskTitle" maxlength="100" required>
+            </label>
+
+            <label>
+                Description
+                <textarea name="description" id="editTaskDescription" rows="4"></textarea>
+            </label>
+
+            <label>
+                Task status
+                <select name="status" id="editTaskStatus" required>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </label>
+
+            <div class="task-modal-actions">
+                <button type="button" class="button secondary" id="cancelTaskEdit">
+                    Cancel
+                </button>
+
+                <button type="submit" class="button primary">
+                    Save Changes
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- PAGE JAVASCRIPT -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // SEARCH AND FILTERS
+        const search = document.getElementById("taskSearch");
+        const statusFilter = document.getElementById("taskStatusFilter");
+        const priorityFilter = document.getElementById("taskPriorityFilter");
+        const rows = document.querySelectorAll(".task-management-row");
+        const noResults = document.getElementById("noTasksFound");
+
+        function filterTasks() {
+            const query = search.value.toLowerCase().trim();
+            const selectedStatus = statusFilter.value;
+            const selectedPriority = priorityFilter.value;
+
+            let visibleCount = 0;
+
+            rows.forEach(function (row) {
+                const text = row.textContent.toLowerCase();
+                const status = row.dataset.status;
+                const priority = row.dataset.priority;
+
+                const matchesSearch = text.includes(query);
+                const matchesStatus =
+                    selectedStatus === "all" || status === selectedStatus;
+                const matchesPriority =
+                    selectedPriority === "all" || priority === selectedPriority;
+
+                const visible =
+                    matchesSearch && matchesStatus && matchesPriority;
+
+                row.style.display = visible ? "" : "none";
+
+                if (visible) visibleCount++;
+            });
+
+            noResults.hidden = visibleCount !== 0 || rows.length === 0;
+        }
+
+        search.addEventListener("input", filterTasks);
+        statusFilter.addEventListener("change", filterTasks);
+        priorityFilter.addEventListener("change", filterTasks);
+
+
+        // MODAL ELEMENTS
+        const addModal = document.getElementById("addTaskModal");
+        const editModal = document.getElementById("editTaskModal");
+
+        function openModal(element) {
+            element.classList.add("open");
+        }
+
+        function closeModal(element) {
+            element.classList.remove("open");
+        }
+
+
+        // ADD TASK MODAL
+        document.getElementById("openAddTaskModal")
+            .addEventListener("click", function () {
+                openModal(addModal);
+            });
+
+        document.getElementById("closeAddTaskModal")
+            .addEventListener("click", function () {
+                closeModal(addModal);
+            });
+
+        document.getElementById("cancelAddTask")
+            ?.addEventListener("click", function () {
+                closeModal(addModal);
+            });
+
+        document.getElementById("cancelAddTaskEmpty")
+            ?.addEventListener("click", function () {
+                closeModal(addModal);
+            });
+
+
+        // ACTION DROPDOWNS
+        document.querySelectorAll(".task-action-trigger").forEach(function (button) {
+
+            button.addEventListener("click", function (event) {
+                event.stopPropagation();
+
+                const menu = button.closest(".task-action-menu");
+                const isOpen = menu.classList.contains("open");
+
+                document.querySelectorAll(".task-action-menu").forEach(function (item) {
+                    item.classList.remove("open");
+                });
+
+                if (!isOpen) {
+                    menu.classList.add("open");
+                }
+            });
+        });
+
+
+        // EDIT TASK MODAL
+        const editForm = document.getElementById("editTaskForm");
+        const titleInput = document.getElementById("editTaskTitle");
+        const descriptionInput = document.getElementById("editTaskDescription");
+        const statusInput = document.getElementById("editTaskStatus");
+
+        document.querySelectorAll(".edit-task-trigger").forEach(function (button) {
+
+            button.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                // GET THE SELECTED TASK DETAILS
+                titleInput.value = button.dataset.title || "";
+                descriptionInput.value = button.dataset.description || "";
+                statusInput.value = button.dataset.status || "Pending";
+
+                // USE THE EXACT FLASK UPDATE URL FOR THIS TASK
+                editForm.action = button.dataset.updateUrl;
+
+                // CLOSE DROPDOWN
+                document.querySelectorAll(".task-action-menu").forEach(function (item) {
+                    item.classList.remove("open");
+                });
+
+                // OPEN EDIT MODAL
+                openModal(editModal);
+            });
+        });
+
+
+        // CLOSE EDIT MODAL
+        document.getElementById("closeTaskModal")
+            .addEventListener("click", function () {
+                closeModal(editModal);
+            });
+
+        document.getElementById("cancelTaskEdit")
+            .addEventListener("click", function () {
+                closeModal(editModal);
+            });
+
+
+        // CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+        document.addEventListener("click", function () {
+            document.querySelectorAll(".task-action-menu").forEach(function (item) {
+                item.classList.remove("open");
+            });
+        });
+
+
+        // CLOSE MODALS WHEN CLICKING OUTSIDE
+        [addModal, editModal].forEach(function (element) {
+            element.addEventListener("click", function (event) {
+                if (event.target === element) {
+                    closeModal(element);
+                }
+            });
+        });
+
+
+        // ESCAPE KEY
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeModal(addModal);
+                closeModal(editModal);
+
+                document.querySelectorAll(".task-action-menu").forEach(function (item) {
+                    item.classList.remove("open");
+                });
+            }
+        });
+
+    });
+</script>
+
+{% endblock %}

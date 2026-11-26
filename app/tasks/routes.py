@@ -136,6 +136,7 @@ def create_task():
             """,
             (user_id, title, description, status, priority, due_date),
         )
+        db.commit()
         new_task_id = cursor.lastrowid
 
         cursor.execute(
@@ -226,6 +227,7 @@ def update_task(task_id):
             sql = f"UPDATE tasks SET {', '.join(fields_to_update)} WHERE id = %s AND user_id = %s"
             params.extend([task_id, user_id])
             cursor.execute(sql, tuple(params))
+            db.commit()
 
         cursor.execute(
             """
@@ -258,6 +260,7 @@ def delete_task(task_id):
             return jsonify({"error": "Task not found"}), 404
 
         cursor.execute("DELETE FROM tasks WHERE id = %s AND user_id = %s", (task_id, user_id))
+        db.commit()
         return "", 204
 
     finally:
