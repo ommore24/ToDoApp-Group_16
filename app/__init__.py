@@ -1,5 +1,6 @@
-from datetime import date, timedelta
-from flask import Flask, jsonify, render_template, session, redirect, url_for, request, flash
+import json
+from datetime import date, datetime, timedelta
+from flask import Flask, jsonify, render_template, session, redirect, url_for, request, flash, Response
 
 from .config import Config
 from .database import init_db, get_db
@@ -347,6 +348,58 @@ def create_app():
     # -------------------------
     # ADMIN ACTION ROUTES
     # -------------------------
+
+    @app.route("/admin/export/json")
+    def admin_export_json():
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            admin = get_current_admin(cursor)
+            if not admin:
+                return redirect(url_for("login_page"))
+
+            ctx = build_admin_context(cursor, admin)
+
+            export_payload = {
+                "exported_at": datetime.now().isoformat(),
+                "exported_by": admin["email"],
+                "summary": ctx["stats"],
+                "users": [
+                    {
+                        "id": u["id"],
+                        "username": u["name"],
+                        "email": u["email"],
+                        "role": u["role"],
+                        "status": u["status"],
+                        "tasks": [
+                            {
+                                "id": t["id"],
+                                "title": t["title"],
+                                "description": t["description"],
+                                "status": t["raw_status"],
+                                "priority": t["priority"].lower(),
+                                "due_date": str(t["due_date"]) if t["due_date"] else None,
+                                "is_overdue": is_overdue(t),
+                            }
+                            for t in ctx["tasks"]
+                            if t["user_id"] == u["id"]
+                        ],
+                    }
+                    for u in ctx["users"]
+                ],
+            }
+
+            pretty_json = json.dumps(export_payload, indent=2, default=str)
+
+            return Response(
+                pretty_json,
+                mimetype="application/json",
+                headers={
+                    "Content-Disposition": "attachment; filename=taskflow_admin_export.json"
+                },
+            )
+        finally:
+            cursor.close()
 
     @app.route("/admin/tasks/add", methods=["POST"])
     def admin_add_task():
